@@ -14,8 +14,10 @@ namespace XMLParser
         {
             try
             {
+                var obj = new Program();
                 Console.WriteLine("Hello World!");
                 XNamespace my = "http://schemas.microsoft.com/office/infopath/2003/myXSD/2013-08-20T04:11:29";
+                XNamespace myhtml = "http://www.w3.org/1999/xhtml";
                 XmlDocument doc = new XmlDocument();
                 doc.Load("C:\\book.xml");
                 XDocument xdoc = XDocument.Load("C:\\book.xml");
@@ -61,7 +63,7 @@ namespace XMLParser
                     ////IF Type is New --> no check required.
                     if (typeValue == "New")
                     {
-                        foreach (XElement elements in elementsGroup.Descendants("html").ToList())
+                        foreach (XElement elements in elementsGroup.Descendants(myhtml + "html").ToList())
                         {
                             var finalString = "\r\n";
                             IEnumerable<XNode> nodes = elements.DescendantNodes();
@@ -84,7 +86,7 @@ namespace XMLParser
                     ////IF Type is Change --> check for strike data is required.
                     if (typeValue == "Change")
                     {
-                        foreach (XElement elements in elementsGroup.Descendants("html").ToList())
+                        foreach (XElement elements in elementsGroup.Descendants(myhtml + "html").ToList())
                         {
                             var finalString = "\r\n";
 
@@ -124,7 +126,8 @@ namespace XMLParser
                     ////IF Type is Change --> check for strike data is required.
                     if (typeValue == "Delete" || typeValue == null || typeValue == "")
                     {
-                        foreach (XElement elements in elementsGroup.Descendants("html").ToList())
+
+                        foreach (XElement elements in elementsGroup.Descendants(myhtml + "html").ToList())
                         {
                             var finalString = "\r\n";
                             var isStrikeData = false;
@@ -132,61 +135,110 @@ namespace XMLParser
 
                             foreach (var nodes in elements.Descendants().ToList())
                             {
-                                if (nodes.HasAttributes && nodes.NodeType == XmlNodeType.Element && !nodes.HasElements)
+                                if (nodes.NodeType == XmlNodeType.Element && nodes.Parent?.Name.LocalName == "html")
                                 {
-                                    var atrrStyle = nodes.Attribute("style");
-                                    var atrrHref = nodes.Attribute("href");
-                                    if (atrrStyle != null && atrrStyle.Value.Contains("line-through"))
-                                    {
-                                        isStrikeData = true;
-                                        nodes.ReplaceWith("");
-                                    }
-                                    else if (atrrHref != null)
-                                    {
-                                        var linkValue = "\r\n" + atrrHref.Parent.Value + "-" + atrrHref.Value + "\r\n";
-                                        finalString = finalString + "\t" + linkValue;
-                                    }
-                                    else
-                                    {
-                                        isNonStrikeData = true;
-                                        finalString = finalString + "\t" + nodes.Value;
-                                    }
+                                    finalString= obj.changeFunction(nodes, "html");
+                                    Console.WriteLine(finalString);
+                                   // nodes.ReplaceWith(finalString);
                                 }
-                                else if (!nodes.HasElements)
-                                {
-                                    isNonStrikeData = true;
-                                    finalString = finalString + "\t" + nodes.Value;
-                                }
-
                             }
+
+
+                            // return flags also from changefunction
+                            elements.ReplaceWith(finalString);
+                            ////elements.Descendants().Where(x=>x.Parent.Name.LocalName=="html").ToList()
+                            //foreach (var nodes in elements.Descendants().ToList())
+                            //{
+                            //    if (nodes.NodeType == XmlNodeType.Element && nodes.Parent?.Name.LocalName == "html")
+                            //    {
+                            //        var atrrStyle1 = nodes.Attribute("style");
+                            //        if (atrrStyle1 != null && atrrStyle1.Value.Contains("line-through"))
+                            //        {
+                            //            isStrikeData = true;
+                            //            nodes.ReplaceWith("");
+                            //        }
+                            //        else
+                            //        {
+                            //            if (!nodes.HasElements)
+                            //            {
+                            //                var atrrStyle = nodes.Attribute("style");
+                            //                var atrrHref = nodes.Attribute("href");
+                            //                if (atrrStyle != null && atrrStyle.Value.Contains("line-through"))
+                            //                {
+                            //                    isStrikeData = true;
+                            //                    nodes.ReplaceWith("");
+                            //                }
+                            //                else if (atrrHref != null)
+                            //                {
+                            //                    var linkValue = "\r\n" + atrrHref.Parent.Value + "-" + atrrHref.Value + "\r\n";
+                            //                    finalString = finalString + "\t" + linkValue;
+                            //                }
+                            //                else
+                            //                {
+                            //                    isNonStrikeData = true;
+                            //                    finalString = finalString + "\t" + nodes.Value;
+                            //                }
+                            //            }
+                            //            else
+                            //            {
+                            //                foreach (var subnodes in nodes.Descendants().ToList())
+                            //                {
+                            //                    var atrrStyle = subnodes.Attribute("style");
+                            //                    var atrrHref = subnodes.Attribute("href");
+                            //                    if (atrrStyle != null && atrrStyle.Value.Contains("line-through"))
+                            //                    {
+                            //                        isStrikeData = true;
+                            //                        subnodes.ReplaceWith("");
+                            //                    }
+                            //                    else if (atrrHref != null)
+                            //                    {
+                            //                        var linkValue = "\r\n" + atrrHref.Parent.Value + "-" + atrrHref.Value + "\r\n";
+                            //                        finalString = finalString + "\t" + linkValue;
+                            //                    }
+                            //                    else
+                            //                    {
+                            //                        isNonStrikeData = true;
+                            //                        finalString = finalString + "\t" + subnodes.Value;
+                            //                    }
+                            //                }
+                            //            }
+                            //        }
+                            //    }
+                            //    //else if (!nodes.HasElements)
+                            //    //{
+                            //    //    isNonStrikeData = true;
+                            //    //    finalString = finalString + "\t" + nodes.Value;
+                            //    //}
+
+                            //}
                             //if (typeValue == "Change" || typeValue == "New")
                             //{
                             //    elements.ReplaceWith(finalString);
                             //}
 
-                            if (typeValue == "Delete")
-                            {
-                                if (isStrikeData)
-                                {
-                                    elements.ReplaceWith("");
-                                }
-                                else
-                                {
-                                    elements.ReplaceWith(finalString);
-                                }
-                            }
+                            //if (typeValue == "Delete")
+                            //{
+                            //    if (isStrikeData)
+                            //    {
+                            //        elements.ReplaceWith("");
+                            //    }
+                            //    else
+                            //    {
+                            //        elements.ReplaceWith(finalString);
+                            //    }
+                            //}
 
-                            if (typeValue == null || typeValue == "")
-                            {
-                                if ((isStrikeData && isNonStrikeData) || (!isStrikeData && isNonStrikeData))
-                                {
-                                    elements.ReplaceWith(finalString);
-                                }
-                                else if ((isStrikeData && !isNonStrikeData) || (!isStrikeData && !isNonStrikeData))
-                                {
-                                    elements.ReplaceWith("");
-                                }
-                            }
+                            //if (typeValue == null || typeValue == "")
+                            //{
+                            //    if ((isStrikeData && isNonStrikeData) || (!isStrikeData && isNonStrikeData))
+                            //    {
+                            //        elements.ReplaceWith(finalString);
+                            //    }
+                            //    else if ((isStrikeData && !isNonStrikeData) || (!isStrikeData && !isNonStrikeData))
+                            //    {
+                            //        elements.ReplaceWith("");
+                            //    }
+                            //}
 
                         }
                     }
@@ -288,9 +340,80 @@ namespace XMLParser
             }
             catch (Exception ex)
             {
-
             }
 
+        }
+
+        public string changeFunction(XElement nodes, string parentTag)
+        {
+            try
+            {
+                var finalString = "\r\n";
+
+                if (nodes.NodeType == XmlNodeType.Element && nodes.Parent!= null)
+                {
+                    var atrrStyle1 = nodes.Attribute("style");
+                    if (atrrStyle1 != null && atrrStyle1.Value.Contains("line-through"))
+                    {
+                        //isStrikeData = true;
+                        nodes.ReplaceWith("");
+                    }
+                    else
+                    {
+                        if (!nodes.HasElements)
+                        {
+                            var atrrHref = nodes.Attribute("href");
+                            if (atrrHref != null)
+                            {
+                                var linkValue = "\r\n" + atrrHref.Parent.Value + "-" + atrrHref.Value + "\r\n";
+                                finalString = finalString + "\t" + linkValue;
+                                //nodes.ReplaceWith(finalString);
+                                Console.WriteLine(finalString);
+                                return finalString;
+                            }
+                            else
+                            {
+                                //isNonStrikeData = true;
+                                finalString = finalString + "\t" + nodes.Value;
+                                //nodes.ReplaceWith(finalString);
+                                Console.WriteLine(finalString);
+                                return finalString;
+                            }
+                        }
+                        else
+                        {
+                            var objNodes = parentTag == "html" ? nodes.Descendants().ToList() : nodes.Descendants().Where(x => x.Parent.Name.LocalName == parentTag).ToList();
+                            foreach (var subnodes in nodes.Descendants().Where(x => x.Parent.Name.LocalName == nodes.Name.LocalName).ToList())
+                            {
+                                finalString += changeFunction(subnodes, nodes?.Name.LocalName);
+
+                                if (!subnodes.HasElements && subnodes.Parent != null)
+                                {
+                                    subnodes.ReplaceWith(finalString);
+                                    Console.WriteLine(finalString);
+                                    return finalString;
+                                }
+                                else if (subnodes.HasElements && subnodes.Parent != null)
+                                {
+                                    finalString += changeFunction(subnodes, nodes?.Name.LocalName);
+                                    subnodes.ReplaceWith(finalString);
+                                }
+                            }
+                        }
+                    }
+                }
+                //else if (!nodes.HasElements)
+                //{
+                //    isNonStrikeData = true;
+                //    finalString = finalString + "\t" + nodes.Value;
+                //}
+                return finalString;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+         
         }
     }
 }
